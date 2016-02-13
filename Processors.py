@@ -1,9 +1,8 @@
 class Processors:
-    CONST_AMOUNT_PROCESSORS = 5;
-    def __init__(self):
-        self.amount = self.CONST_AMOUNT_PROCESSORS
+    def __init__(self, amount):
+        self.amount = amount
         self.dict = {}
-        for i in range(1, self.CONST_AMOUNT_PROCESSORS + 1):
+        for i in range(1, self.amount + 1):
             self.dict['x'+str(i)] = True
 
     def display_state(self):
