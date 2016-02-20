@@ -1,4 +1,4 @@
-
+from collections import OrderedDict
 
 
 class Formulas_generator:
@@ -33,24 +33,38 @@ class Formulas_generator:
         else:
             for j in range(fault_tolerance + 1):
                 group1_amount = amount_processors / 2
+                group2_amount = amount_processors - group1_amount
                 group1 = []
                 group2 = []
-                if (group1_amount >= j) and (amount_processors - group1_amount >= fault_tolerance - j):
-                    if (not j == 0):
-                        group1 = self.generate(group1_amount, j,
-                                               dict(processors_dictionary.items()[len(processors_dictionary) / 2:]))
+                processors_group = self.divide_processors([group1_amount, group2_amount], processors_dictionary)
+                if (group2_amount >= j) and (group1_amount >= fault_tolerance - j):
                     if (not fault_tolerance - j == 0):
-                        group2 = self.generate(amount_processors - group1_amount, fault_tolerance - j,
-                                               dict(processors_dictionary.items()[:len(processors_dictionary) / 2]))
+                        group1 = self.generate(group1_amount, fault_tolerance - j,processors_group.get(1))
+                    if (not j == 0):
+                        group2 = self.generate(group2_amount, j, processors_group.get(2))
 
 
                 if not group1: formulas = formulas + group2
                 elif not group2: formulas = formulas + group1
                 else:
                     for i in group1:
-                        for j in group2:
-                            formulas.append(i + " | " + j)
+                        for k in group2:
+                            formulas.append(i + " | " + k)
             return formulas
+
+
+    def divide_processors(self, amounts, processors_dictionary):
+        divided_processors ={}
+        j = 0
+        for i in amounts:
+            j+=1
+            #divided_processors.update({j:dict(processors_dictionary.items()[:i])})
+            #processors_dictionary = dict(processors_dictionary.items()[i:])
+
+            divided_processors.update({j:OrderedDict(processors_dictionary.items()[:i])})
+            processors_dictionary = OrderedDict(processors_dictionary.items()[i:])
+
+        return divided_processors
 
 
 
