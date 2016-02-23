@@ -58,9 +58,6 @@ class Formulas_generator:
         j = 0
         for i in amounts:
             j+=1
-            #divided_processors.update({j:dict(processors_dictionary.items()[:i])})
-            #processors_dictionary = dict(processors_dictionary.items()[i:])
-
             divided_processors.update({j:OrderedDict(processors_dictionary.items()[:i])})
             processors_dictionary = OrderedDict(processors_dictionary.items()[i:])
 

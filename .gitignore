@@ -1,2 +1,2 @@
 /sympy-0.7.6.1
-*.pyc
+*.pyc *.txt
