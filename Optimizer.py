@@ -1,41 +1,124 @@
 import itertools
 from sympy.simplify.cse_main import cse
 from sympy.parsing.sympy_parser import parse_expr
+from sympy import *
 
 
 class Optimizer:
-    def __init__(self, filein, file_agg, fileout):
-        with open(filein) as f:
-            self.filein_arr = f.readlines()
-        self.fileagg = file_agg
-        self.fileout = fileout
-        self.optimize()
-
+    def __init__(self, original_formulas, amount_processor, fault_tolerance, processors, optimized_file):
+        self.original_formulas = map(lambda x: parse_expr(x), list(original_formulas))
+        self.concatenated_formulas = []
+        self.result_formulas = []
+        self.amount_processor = amount_processor
+        self.fault_tolerance = fault_tolerance
+        self.processors = processors
+        self.optimized_file = optimized_file
 
     def optimize(self):
-        fi = open(self.fileagg, "w+")
 
-        for i in range(2, len(self.filein_arr)):
-            for j in itertools.combinations(self.filein_arr, i):
-                considered_formulas = self.find_formulas(j)
-                self.check_matches(considered_formulas)
+        self.form_formulas()
+        table1 = self.form_table(self.fault_tolerance)
+        table2 = self.form_table(self.fault_tolerance+1)
+        self.result_formulas = self.choose_result_formulas(table1, table2)
+        with open(self.optimized_file,"w") as f:
+            for i in self.result_formulas:
+                f.write("\n Next combination of formulas:")
+                f.write("\n".join("%s " % x for x in i))
+        f.close()
 
-        """for i1 in range(len(self.filein_arr)-1):
-            for i2 in range(len(self.filein_arr)-1):
-                if (i2>i1):
-                    if cse([parse_expr(self.filein_arr[i1]), parse_expr(self.filein_arr[i2])],optimizations='basic')[0]:
-                        fi.write(self.filein_arr[i1].rstrip()+' | '+self.filein_arr[i2].rstrip()+"\n")"""
-        fi.close()
+    def check_amount(self, comb, table, null_amount):
+        for i in itertools.combinations(self.processors.dict.keys(), null_amount):
+            amount = 0
+            for formula in comb:
+                if not table[formula, i]:
+                    amount += 1
+            if null_amount == self.fault_tolerance:
+                if amount > 1:
+                    return False
+            else:
+                if amount < 2:
+                    return False
+        return True
 
-    def find_formulas(self, formulas_list):
-        formul_list = []
-        for i in self.filein_arr:
-            if i in formulas_list:
-                formul_list.append(i)
-        return formul_list
-    # TODO: add check_matches method
 
-    """def check_matches(self, considered_formulas):
-        for i in considered_formulas:
-            for k in range (len(parse_expr(i).args))
-            for j in itertools.combinations(parse_expr(i).args, i):"""
+    def choose_result_formulas(self, table1, table2):
+        itr = 1
+        lst_combinations=[]
+        while True:
+            flag = False
+            for comb in itertools.combinations(self.concatenated_formulas, itr):
+                if self.check_amount(comb, table1, self.fault_tolerance) and self.check_amount(comb, table2, self.fault_tolerance+1):
+                    flag = True
+                    lst_combinations.append(comb)
+            itr += 1
+            if itr == len(self.concatenated_formulas) + 1 or flag:
+                break
+        return lst_combinations
+
+
+
+    def form_table(self, null_amount):
+        combinations = itertools.combinations(self.processors.dict.keys(), null_amount)
+        table = {}
+        for i in combinations:
+            self.processors.generate_combintions(i)
+            for j in self.concatenated_formulas:
+                table[j, i] = j.subs(self.processors.dict)
+        return table
+
+    def form_formulas(self):
+        for itr in range(2, len(self.original_formulas)):
+            for comb in itertools.combinations(self.original_formulas, itr):
+                formula = self.check_comb_formulas(comb)
+                if formula:
+                    self.concatenated_formulas.append(formula)
+
+        while True:
+            flag = True
+            for itr in range(len(self.concatenated_formulas), 1, -1):
+                for comb in itertools.combinations(list(self.concatenated_formulas), itr):
+                    formula = self.check_comb_formulas(comb)
+                    if formula:
+                        flag = False
+                        self.concatenated_formulas = list(set(self.concatenated_formulas) - set(comb))
+                        self.concatenated_formulas.append(formula)
+                        break
+                else:
+                    continue
+                break
+            if flag:
+                break
+        self.concatenated_formulas += self.original_formulas
+
+
+
+    def check_comb_formulas(self, formulas):
+        common = self.common_part(formulas)
+        if common:
+            formula = []
+            for f in formulas:
+                rest = Or(*filter(lambda x: x not in common, f.args))
+                formula.append(rest)
+            formula = Or(Or(*common), And(*formula))
+            return formula
+
+
+    def common_part(self, formulas):
+        # for iter in range(len((parse_expr(min(formulas, key=len))).args), 0,-1):
+        shortest_function = min(formulas, key=lambda x: len(x.args))
+        for itr in range(len(shortest_function.args), 0, -1):
+            for terms in itertools.combinations(formulas[0].args, itr):
+                for formula in formulas:
+                    for term in terms:
+                        if term not in formula.args:
+                            break
+                    else:
+                        continue  # executed if the loop ended normally (no break)
+                    break
+                else:
+                    return terms
+
+
+
+
+

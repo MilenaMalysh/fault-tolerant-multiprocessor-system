@@ -3,8 +3,10 @@ from collections import OrderedDict
 
 class Formulas_generator:
     def __init__(self, processors, fault_tolerance, outfile):
+        self.origin_formulas_arr=[]
         with open(outfile,"w") as f:
-            f.write("\n".join(self.generate(len(processors.dict), fault_tolerance, processors.dict)))
+            self.origin_formulas_arr = self.generate(len(processors.dict), fault_tolerance, processors.dict)
+            f.write("\n".join(self.origin_formulas_arr))
         f.close()
 
 

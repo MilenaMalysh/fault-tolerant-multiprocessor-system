@@ -3,7 +3,6 @@ from collections import OrderedDict
 class Processors:
     def __init__(self, amount):
         self.amount = amount
-        #self.dict = {}
         self.dict = OrderedDict()
         for i in range(1, self.amount + 1):
             self.dict['x'+str(i)] = True
